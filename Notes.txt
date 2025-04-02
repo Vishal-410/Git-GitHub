@@ -4,7 +4,7 @@
 4. command -> git init  => empty gir ropp create
 5. open in vs using code . in terminal
 
-<<<<<<< Updated upstream:Notes.txt
+
 # git diff
 git diff --stagged
 =======
