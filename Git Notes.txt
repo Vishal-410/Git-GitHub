@@ -1,1 +1,3 @@
 #ssh notes
+generate public and private key
+ssh-keygen -t rsa -b 4096 -C "email"
