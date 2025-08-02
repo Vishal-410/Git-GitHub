@@ -128,3 +128,229 @@ it allow you to interact with services like GitHub, GitLab, Bitbucked whithout e
 -> -b 4096 : Sets 409 
 -> -C : Add comments to you 
 >>>>>>> Stashed changes:Git Notes.txt
+
+Understanding SSH Keys and Git Authentication
+SSH (Secure Shell) Keys are a pair of cryptographic keys: a private key and a public key.
+
+Private Key: This key is like your secret password. It must be kept secure on your local machine (C:\Users\YourUsername\.ssh\). Never share it or upload it to Git repositories.
+
+Public Key: This key is meant to be shared. You upload it to services like GitHub. When you connect, the service uses your public key to verify that you possess the corresponding private key, authenticating you securely.
+
+Git Authentication: Using SSH keys is the recommended and most secure way to authenticate with Git hosting services for private repositories. It eliminates the need for passwords or personal access tokens for git pull, git push, and git clone operations.
+
+Key Naming Convention: While technically any name works, it's best practice to use a descriptive name like id_ed25519_yourgithubusername to easily identify the key's purpose and owner.
+
+2. Generating a New SSH Key Pair
+This creates your private and public key files.
+
+Open PowerShell. (You can open it as Administrator, though typically not required for ssh-keygen).
+
+Generate the key pair with a descriptive name (e.g., Vishal-0410 for your GitHub account):
+
+PowerShell
+
+ssh-keygen -t ed25519 -f C:\Users\hp\.ssh\Vishal-0410 -C "vishal.singh01.hp@gmail.com_github_account"
+-t ed25519: Specifies the modern and secure ed25519 encryption type.
+
+-f C:\Users\hp\.ssh\Vishal-0410: Defines the full path and desired filename for your private key. The public key will automatically be created with .pub appended (Vishal-0410.pub).
+
+-C "...": Adds a comment to your public key, useful for identification on GitHub.
+
+Enter a Passphrase:
+
+You'll be prompted to "Enter passphrase (empty for no passphrase):". Always use a strong passphrase! This encrypts your private key on your disk, adding an extra layer of security.
+
+Enter the same passphrase again to confirm.
+
+Confirmation: You'll see messages indicating where your identification (private key) and public key have been saved, along with the key's fingerprint.
+
+3. Adding the Public Key to Your Git Hosting Service (e.g., GitHub)
+This step links your local key to your online account, allowing the service to authenticate you.
+
+Copy your Public Key:
+
+In PowerShell, display and copy the entire content of your new public key file:
+
+PowerShell
+
+type C:\Users\hp\.ssh\Vishal-0410.pub
+Carefully copy the entire output, starting from ssh-ed25519 and including the comment at the end.
+
+Log in to your GitHub (or GitLab/Bitbucket) account in your web browser.
+
+Navigate to SSH Key Settings:
+
+For GitHub: Go to your Profile Picture (top-right) > Settings > SSH and GPG keys (left sidebar).
+
+Remove Old Public Keys (Optional, but Recommended for Cleanliness):
+
+If you have any old or similarly named keys (like hpcrm_frontend from our previous setup), it's a good idea to delete them from GitHub's list now to avoid confusion. Click the "Delete" (trash can) icon next to them.
+
+Add the New Public Key:
+
+Click "New SSH key" (or "Add SSH key").
+
+Title: Give it a descriptive title (e.g., "HP Laptop - Vishal-0410 GitHub Key").
+
+Key: Paste the entire public key content you copied in step 1.
+
+Click "Add SSH key".
+
+4. Configuring SSH Client with ~/.ssh/config File
+This file tells your SSH client (and Git) which key to use for which host. This is crucial for managing multiple keys or specific aliases.
+
+Open/Create the config file:
+
+Open PowerShell.
+
+Use VS Code (recommended) or Notepad to open the file:
+
+PowerShell
+
+code C:\Users\hp\.ssh\config
+# OR
+notepad C:\Users\hp\.ssh\config
+If the file doesn't exist, it will be created.
+
+Add/Modify Host Entries:
+
+Paste the following configuration into your config file. Adjust the Host alias and IdentityFile path as shown.
+
+Code snippet
+
+# Default settings for all SSH connections (optional, but good for agent)
+Host *
+  AddKeysToAgent yes
+
+# Configuration for your GitHub account using the new key
+# This 'Host' alias (e.g., github.com-Vishal-0410) is what you'll use in Git commands
+Host github.com-Vishal-0410
+  Hostname github.com
+  User git
+  IdentityFile ~/.ssh/Vishal-0410 # Path to your private key (new name)
+  IdentitiesOnly yes             # Only use this specific key for this host
+
+# Example for an HPC/Remote Server (if you had another key for it, like 'hpcrm')
+# Host my-hpc-server
+#   Hostname 192.168.1.100 # Replace with your HPC's IP or domain
+#   User hpc_username     # Replace with your username on the HPC
+#   IdentityFile ~/.ssh/hpcrm # Path to your HPC-specific private key
+#   IdentitiesOnly yes
+Host github.com-Vishal-0410: This is a custom alias. You can name it anything descriptive, but ensure it's used consistently in Git commands.
+
+Hostname github.com: The actual domain name of the Git service.
+
+User git: For GitHub/GitLab/Bitbucket SSH, the SSH username is always git.
+
+IdentityFile ~/.ssh/Vishal-0410: Crucially, this points to your new private key file. ~ automatically expands to C:\Users\hp.
+
+IdentitiesOnly yes: Tells SSH to only try this specific key for this host, preventing issues with multiple keys.
+
+Save the config file.
+
+Set Correct Permissions (Critical for Security):
+
+Open PowerShell as Administrator.
+
+Run these commands to ensure only your user account can read/write the config file:
+
+PowerShell
+
+$file = "C:\Users\hp\.ssh\config"
+$acl = Get-Acl $file
+$acl.SetAccessRuleProtection($true, $false)
+$sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
+$rule = New-Object System.Security.AccessControl.FileSystemAccessRule($sid, "FullControl", "Allow")
+$acl.AddAccessRule($rule)
+Set-Acl -Path $file -AclObject $acl
+5. Adding Your Private Key to the SSH Agent
+The SSH agent is a background service that holds your decrypted private keys in memory. This means you only type your passphrase once per session, not every time you use the key.
+
+Open PowerShell or Git Bash.
+
+Ensure SSH Agent is Running and Set to Automatic Startup:
+
+PowerShell
+
+Get-Service ssh-agent | Set-Service -StartupType Automatic -PassThru | Start-Service
+(This command also attempts to start it if it's not running).
+
+Add your new private key to the agent:
+
+PowerShell
+
+ssh-add C:\Users\hp\.ssh\Vishal-0410
+You'll be prompted to enter the passphrase you set for this key. Type it carefully and press Enter.
+
+You should see Identity added: C:\Users\hp\.ssh\Vishal-0410 (...).
+
+Verify loaded keys (Optional):
+
+PowerShell
+
+ssh-add -l
+This will list all keys currently loaded in your agent.
+
+6. Testing Your SSH Connection to GitHub
+Before using Git, confirm SSH can connect using your new setup.
+
+In PowerShell or Git Bash, run:
+
+Bash
+
+ssh -T git@github.com-Vishal-0410
+If this is your first time connecting to github.com from this machine, you'll be prompted about the host's authenticity. Type yes and press Enter to add it to your known_hosts file.
+
+Success Message: You should see Hi Vishal-0410! You've successfully authenticated, but GitHub does not provide shell access.. This confirms your setup is working!
+
+7. Using Your New SSH Key for Git Operations
+Now you can interact with your private repositories securely.
+
+Option A: Cloning a New Repository
+If you don't have a local copy of the repository yet:
+
+Get the SSH Clone URL: Go to your private repository on GitHub, click "Code" (or similar), and copy the SSH URL (starts with git@github.com:...).
+
+In your terminal, navigate to the directory where you want to save the project.
+
+Run the git clone command, using your config alias:
+
+Bash
+
+git clone git@github.com-Vishal-0410:your_organization/your_private_repo.git
+Remember to replace your_organization/your_private_repo.git with the actual path from your GitHub repository's SSH URL.
+
+Option B: Updating an Existing Local Repository
+If you previously cloned the repository using HTTPS and want to switch to SSH:
+
+In your terminal, navigate into your local repository's directory:
+
+Bash
+
+cd C:\path\to\your\local\repo
+Set the new remote URL to use your SSH alias:
+
+Bash
+
+git remote set-url origin git@github.com-Vishal-0410:your_organization/your_private_repo.git
+Again, replace your_organization/your_private_repo.git with the actual path.
+
+Verify the change (Optional):
+
+Bash
+
+git remote -v
+You should now see the origin URLs starting with git@github.com-Vishal-0410.
+
+8. Cleaning Up Old Key Files (Optional but Recommended)
+Once your new Vishal-0410 key is fully operational and tested, you can remove the old key files from your system.
+
+Open File Explorer and go to C:\Users\hp\.ssh.
+
+Delete the files named:
+
+hpcrm_frontend
+
+hpcrm_frontend.pub
+
+You now have a robust and well-documented SSH setup for Git on your Windows machine! Remember to keep your private key secure and your passphrase strong.
