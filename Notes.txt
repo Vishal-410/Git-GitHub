@@ -263,6 +263,16 @@ $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User
 $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($sid, "FullControl", "Allow")
 $acl.AddAccessRule($rule)
 Set-Acl -Path $file -AclObject $acl
+
+======================================for linux===============================
+chmod 600 ~/.ssh/config           # SSH config file
+chmod 600 ~/.ssh/id_rsa           # Private key
+chmod 644 ~/.ssh/id_rsa.pub       # Public key
+chmod 700 ~/.ssh                  # SSH directory
+
+=============================================================================
+
+
 5. Adding Your Private Key to the SSH Agent
 The SSH agent is a background service that holds your decrypted private keys in memory. This means you only type your passphrase once per session, not every time you use the key.
 
@@ -274,6 +284,11 @@ PowerShell
 
 Get-Service ssh-agent | Set-Service -StartupType Automatic -PassThru | Start-Service
 (This command also attempts to start it if it's not running).
+======================================for linux===============================
+In linux ssh agent is already available you have just start
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+=============================================================================
 
 Add your new private key to the agent:
 
