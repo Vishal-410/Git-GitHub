@@ -1,0 +1,240 @@
+GIT COMPLETE NOTES
+==================
+
+1. INSTALLATION & INITIAL SETUP
+-------------------------------
+1) Install Git:
+   - Download from https://git-scm.com/downloads
+   - Verify installation:
+     git --version
+
+2) Global Configuration:
+   git config --global user.name "Your Name"
+   git config --global user.email "youremail@example.com"
+
+3) Create a project folder:
+   mkdir my-project
+   cd my-project
+
+4) Initialize repository:
+   git init
+   -> Creates a hidden .git folder that tracks changes.
+
+5) Open in VS Code:
+   code .
+
+----------------------------------------------
+
+2. GIT AREAS / FILE LIFECYCLE
+------------------------------
+- **Working Directory**: Where we write code.
+- **Staging Area (Index)**: Temporary storage for selected changes.
+- **Commit (Local Repo)**: Permanent snapshot stored in Git’s database.
+
+STATUS SYMBOLS (in VS Code or `git status -s`):
+- U = Untracked (new file, not in Git yet)
+- A = Added (staged)
+- M = Modified (changed after staging)
+
+----------------------------------------------
+
+3. IMPORTANT COMMANDS
+----------------------
+
+# STAGING & DE-STAGING
+git add file1.txt            -> Move file to staging area
+git add .                    -> Stage all files
+git rm --cached file.txt      -> Remove from staging back to working
+git rm -r --cached .          -> Remove all files from staging
+
+# COMMITTING
+git commit -m "message"       -> Save snapshot permanently
+git commit -a -m "msg"        -> Add tracked + commit (skip staging)
+git commit --amend -m "new"   -> Edit last commit
+git commit --amend --no-edit  -> Keep same message, update changes
+git commit --allow-empty -m "dummy" -> Create empty commit (for CI/CD)
+
+# RESET
+git reset --soft HEAD~1       -> Undo last commit (keep staged)
+git reset --mixed HEAD~1      -> Undo last commit (keep changes unstaged)
+git reset --hard HEAD~1       -> Undo last commit (delete changes, dangerous)
+git reset --hard <hash>       -> Move repo to specific commit
+
+# LOGS
+git log                       -> Full history
+git log --oneline             -> Compact (hash + message)
+git log --pretty=short/full   -> Author + commit info
+git log -p                    -> See actual code changes
+git log --since="yesterday"   -> Filter commits by time
+git log --author="Vishal"     -> Filter by author
+git log --grep="fix"          -> Filter by keyword
+
+# DIFF
+git diff                      -> Show unstaged changes
+git diff --staged             -> Show staged changes
+
+----------------------------------------------
+
+4. COMMITS
+-----------
+A commit stores:
+1) WHO     -> name & email
+2) WHEN    -> date & time
+3) WHAT    -> commit message
+4) SNAPSHOT -> SHA-1 hash ID (40 char unique ID)
+
+- First commit is called **root commit**.
+- HEAD is a pointer to the latest commit of the current branch.
+
+----------------------------------------------
+
+5. BRANCHING
+-------------
+# Create and list branches
+git branch                   -> List local branches
+git branch branchName        -> Create new branch
+git checkout branchName      -> Switch branch (old)
+git switch branchName        -> Switch branch (preferred)
+git checkout -b branchName   -> Create + switch
+
+# Rename branch
+git branch -m newname        -> Rename branch
+git branch -M newname        -> Force rename
+
+# Delete branch
+git branch -d branchName     -> Delete safely
+git branch -D branchName     -> Force delete
+
+# Merge
+git merge branchName         -> Merge into current branch
+Types of merges:
+- Fast-forward merge
+- 3-way merge (conflict resolution needed)
+- Rebase merge
+- Squash merge
+
+# Check commits
+git log                      -> Full log
+git log --oneline            -> One-line summary
+(Press `q` to exit log view)
+
+----------------------------------------------
+
+6. REMOTE REPOS
+----------------
+# Connect to remote
+git remote add origin <url>
+
+# Push
+git push -u origin main      -> Push + set upstream
+
+# Fetch & Pull
+git fetch                    -> Get remote changes (no merge)
+git pull                     -> Fetch + merge
+git pull --allow-unrelated-histories -> Force pull (when histories differ)
+
+# Remote branch list
+git branch -r                -> Show remote branches
+
+----------------------------------------------
+
+7. STASH (TEMPORARY SAVE)
+--------------------------
+git stash                    -> Save uncommitted changes
+git stash list               -> List all stashes
+git stash apply stash@{0}    -> Reapply stash (keep in list)
+git stash pop                -> Reapply stash & remove it
+git stash drop stash@{0}     -> Delete stash
+
+----------------------------------------------
+
+8. SSH & GIT (IMPORTANT)
+------------------------
+
+🔹 What is SSH?
+- SSH = Secure Shell, a cryptographic protocol for secure communication.
+- Git uses SSH to authenticate with services like GitHub, GitLab, Bitbucket.
+- Benefits:
+  - No need to enter username/password every time.
+  - Secure authentication using keys.
+  - Useful for automation (CI/CD).
+
+🔹 SSH Keys
+- A key pair = Public key + Private key
+- Private key → stays in your computer (NEVER share it).
+- Public key → uploaded to GitHub/GitLab.
+
+🔹 Generate SSH Key
+Windows (PowerShell):
+  ssh-keygen -t ed25519 -C "your_email@example.com"
+
+Linux/Mac:
+  ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+This creates:
+- id_ed25519 (private key)
+- id_ed25519.pub (public key)
+
+🔹 Add public key to GitHub
+1. Copy public key:
+   type ~/.ssh/id_ed25519.pub   (Windows: type C:\Users\You\.ssh\id_ed25519.pub)
+2. Go to GitHub → Settings → SSH & GPG Keys → New SSH Key.
+3. Paste and save.
+
+🔹 Configure SSH client (~/.ssh/config)
+Example config file:
+  Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+
+🔹 Start SSH Agent
+Windows:
+  Get-Service ssh-agent | Set-Service -StartupType Automatic -PassThru | Start-Service
+  ssh-add ~/.ssh/id_ed25519
+
+Linux/Mac:
+  eval "$(ssh-agent -s)"
+  ssh-add ~/.ssh/id_ed25519
+
+🔹 Test connection
+ssh -T git@github.com
+
+Expected:
+"Hi <username>! You've successfully authenticated, but GitHub does not provide shell access."
+
+🔹 Use SSH for cloning
+git clone git@github.com:username/repo.git
+
+If using config alias:
+git clone git@github.com-Vishal-0410:org/repo.git
+
+----------------------------------------------
+
+9. SAFE PRACTICES
+------------------
+- NEVER share your private key.
+- Use `git reset --hard` only with caution.
+- Prefer `git revert` for undoing published commits.
+- Always pull before push to avoid conflicts.
+- Use branches for new features/fixes.
+- Add `.gitignore` to exclude unwanted files (node_modules, build, secrets).
+
+----------------------------------------------
+
+10. QUICK RECAP
+---------------
+1) git init
+2) git add file
+3) git commit -m "msg"
+4) git log / git diff
+5) git branch, git switch
+6) git merge
+7) git push / pull / fetch
+8) git stash
+9) SSH setup for secure authentication
+
+----------------------------------------------
+
+END OF DOCUMENT
