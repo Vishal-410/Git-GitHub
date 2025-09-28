@@ -1,0 +1,244 @@
+GIT CHEAT SHEET / DOCUMENTATION
+===============================
+
+1) REPOSITORY INITIALIZATION
+----------------------------
+git init
+  - Initializes a new Git repository in the current folder.
+  - Older Git versions default branch: "master".
+
+git init --initial-branch=main
+  - Initializes repository with "main" as the default branch.
+
+2) STAGING AREA (INDEX)
+-----------------------
+git add f1.txt f2.txt
+  - Add specific files from working directory -> staging area.
+
+git add .
+  - Add all new/modified files to staging (recursive from current dir).
+
+git rm --cached f1.txt f2.txt
+  - Remove files from staging (index) but keep them in working directory.
+
+3) CHECKING STATUS
+------------------
+git status
+  - Show normal status: staged, modified, untracked.
+
+git status -s
+  - Short status (compact symbols: M, A, D, ??, etc).
+
+git status -v
+  - Verbose / detailed information.
+
+4) COMMITS
+----------
+git commit -m "first commit"
+  - Records staged changes as a commit.
+  - A commit stores:
+      1) When it happened (timestamp)
+      2) Who committed (author)
+      3) Commit message
+      4) Snapshot (object referenced by SHA1 or current hash algorithm)
+  - The snapshot is named using a secure hash (SHA1 historically).
+
+git commit -a -m "msg"
+  - Commit all modified & tracked files (skips `git add` for tracked files).
+
+git commit --amend
+  - Modify the last commit (message and/or include newly staged changes).
+
+git commit --amend --no-edit
+  - Amend last commit but keep the same commit message.
+
+git commit -s -m "task done"
+  - Add Signed-off-by line (useful for contribution workflows).
+
+git commit --allow-empty -m "dummy"
+  - Create an empty commit (used for CI/CD or to mark points in history).
+
+5) LOGS & HISTORY
+------------------
+git log
+  - Show commit history for the current branch.
+
+git log -n 2
+  - Show last 2 commits.
+
+git log --pretty=short
+  - Minimal information: hash + author + message.
+
+git log --pretty=full
+  - Detailed: author, committer, date, message.
+
+git log --pretty=fuller
+  - Maximum info: author, committer, dates, timestamps, message.
+
+git log --pretty=oneline
+  - One commit per line (compact).
+
+git log -p
+  - Show patch (diff) for each commit.
+
+Filtering by date / author / message:
+git log --since="one week ago"
+git log --since="yesterday"
+git log --since="one month ago"
+git log --since="2024-04-05" --until="2024-05-04"
+git log --author="Vishal"
+git log --grep="Modified"
+
+6) RESET & REVERT
+------------------
+git reset --soft <commit-hash>
+  - Move branch HEAD to <commit-hash>; keep changes staged (index preserved).
+
+git reset --mixed <commit-hash>
+  - Move branch HEAD to <commit-hash>; keep changes in working directory (unstaged).
+  - This is the default behavior of `git reset <commit-hash>`.
+
+git reset --hard <commit-hash>
+  - Move branch HEAD to <commit-hash> and discard all working directory & index changes.
+  - WARNING: data-loss if not careful.
+
+git revert <commit-hash>
+  - Create a new commit that undoes the changes introduced by <commit-hash>.
+  - Safe for published history (preserves history).
+
+7) BRANCHING
+------------
+git branch
+  - List local branches; indicates current branch.
+
+git branch <name>
+  - Create a new branch named <name>.
+
+git checkout <branch>
+  - Switch to <branch> (older multi-purpose command).
+
+git switch <branch>
+  - Switch to <branch> (preferred for branch switching).
+
+git branch -d <branch>
+  - Delete local branch (safe delete, fails if unmerged).
+
+git branch -D <branch>
+  - Force delete local branch.
+
+HEAD and branches:
+  - HEAD points to the tip (latest commit) of current branch.
+  - After first commit a branch (e.g., main) is created and HEAD points to it.
+  - Checkout a specific commit: `git checkout <commit-hash>` -> detached HEAD.
+
+8) MERGE & CHERRY-PICK
+----------------------
+git merge <source-branch>
+  - Merge <source-branch> into current branch.
+  - Conflicts require manual resolution; then commit to complete the merge.
+
+git cherry-pick <commit-hash>
+  - Apply the changes from the specified commit onto the current branch (good for picking single commits).
+
+9) REMOTE REPOSITORIES
+----------------------
+git remote -v
+  - Show remotes and their URLs.
+
+git push -u origin main
+  - Push local branch "main" to remote "origin" and set upstream.
+
+git branch -r
+  - List remote-tracking branches.
+
+git fetch
+  - Fetch remote updates (does not modify working tree or current branch).
+
+git fetch origin main
+  - Fetch only main branch from origin.
+
+git fetch --all
+  - Fetch all remotes.
+
+git merge origin/master
+  - Merge the fetched origin/master into current branch (after fetch).
+
+git pull
+  - Equivalent to `git fetch` + `git merge` (fetch changes and merge into current branch).
+
+10) STASH (TEMPORARY SAVE)
+--------------------------
+git stash
+  - Save local modifications (working directory and index) to a stack-like stash.
+
+git stash list
+  - List saved stashes (stash@{0}, stash@{1}, ...).
+
+git stash apply stash@{0}
+  - Reapply changes from a specific stash (keeps stash entry).
+
+git stash pop
+  - Apply the latest stash and remove it from the stash list.
+
+git stash drop stash@{0}
+  - Delete a specific stash entry.
+
+11) MISC & USAGE NOTES
+----------------------
+- The next commit always references the previous commit (linked history).
+- Use `git log -p` or `git show <commit>` to inspect exact changes.
+- Use descriptive commit messages: a short summary line and optional detailed body.
+- For collaboration:
+    - Pull regularly (`git fetch` + review, then `git merge` or `git rebase` if appropriate).
+    - Prefer small commits that represent a single logical change.
+- Rewriting published history (git reset --hard, git commit --amend, force-push) is dangerous for shared branches. Prefer `git revert` for shared/public branches.
+
+12) EXAMPLES (common workflows)
+-------------------------------
+Create repo and first commit:
+  mkdir myproj
+  cd myproj
+  git init --initial-branch=main
+  echo "Hello" > README.md
+  git add README.md
+  git commit -m "Initial commit"
+
+Create feature branch and merge:
+  git checkout -b feature/x
+  # make changes, stage and commit
+  git commit -am "Add feature X"
+  git checkout main
+  git merge feature/x
+
+Push new branch to remote and set upstream:
+  git push -u origin feature/x
+
+Undo last commit but keep changes staged:
+  git reset --soft HEAD~1
+
+Revert a published commit:
+  git revert <commit-hash>
+
+Stash work, switch branch, reapply:
+  git stash
+  git switch main
+  git stash apply stash@{0}
+
+13) QUICK SYMBOLS / STATUS CODES (git status -s)
+------------------------------------------------
+M  = Modified
+A  = Added (staged)
+D  = Deleted
+R  = Renamed
+C  = Copied
+?? = Untracked
+!  = Ignored
+
+14) SAFE PRACTICES
+------------------
+- Never force-push to shared branches without coordinating with team.
+- Always fetch and review remote changes before merging.
+- Use branches for features, fixes, experiments.
+- Add a .gitignore to exclude build artifacts, node_modules, secrets.
+
+END OF DOCUMENT
